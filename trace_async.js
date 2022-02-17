@@ -48,7 +48,7 @@ async function getBaseFromTracing(traceFile = '') {
   let baseTime = '';
   let cpuTracingBase = 0;
 
-  let jsonData = JSON.parse(await readFileAsync('GET', traceFile));
+  let jsonData = JSON.parse(await readFileAsync(traceFile));
   for (let event of jsonData['traceEvents']) {
     let eventName = event['name'];
     if (eventNames.indexOf(eventName) >= 0) {
@@ -85,7 +85,7 @@ async function parseCPUTrace(traceFile = '', totalTime = 0, baseCPUTime) {
   let base_ts = 0;
   let baseTime = '';
 
-  let jsonData = JSON.parse(await readFileAsync('GET', traceFile));
+  let jsonData = JSON.parse(await readFileAsync(traceFile));
   for (let event of jsonData['traceEvents']) {
     let eventName = event['name'];
     if (eventNames.indexOf(eventName) >= 0) {
@@ -111,7 +111,7 @@ async function parseGPUTrace(traceFile = '', totalTime = 0, baseGPUTime) {
   let results = {};
   let base_ts = 0;
 
-  let jsonData = JSON.parse(await readFileAsync('GET', traceFile));
+  let jsonData = JSON.parse(await readFileAsync(traceFile));
   // Raw GPU timestamp is ns, divided by 1000000 to get ms, align with CPU time.
   const TICK2MS = 1 / 1000000;
 

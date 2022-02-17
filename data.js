@@ -77,7 +77,7 @@ function createGPUModel(jsonData, data, categoriesIndex) {
   return [gpuCategories, categoriesIndex];
 }
 
-async function readFileAsync(method, url) {
+async function readFileAsync(url, method = 'GET') {
   return new Promise(function(resolve, reject) {
     let xhr = new XMLHttpRequest();
     xhr.open(method, url);
