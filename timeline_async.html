@@ -1,0 +1,95 @@
+<body>
+  <text>
+    <b>Advanced usage</b>
+    <p>
+      Some parameters are supported in url, and you may use them as 'index.html?key0=value0&key1=value1'.
+      Supported parameters are:
+    <p>
+      1) cpufile=[json file name]. Example: cpufile=mobilenetv2.
+    <p>
+      2) gpufile=[json file name]. Example: cpufile=mobilenetv2&gpufile=gpu_data.
+    <p>
+      Use the following file to generate CPU tracing and GPU time data:
+    <p>
+      1) CPU tracing:
+      chrome.exe --disable-dawn-features=disallow_unsafe_apis
+      --enable-dawn-features=record_detailed_timing_in_trace_events
+      --enable-unsafe-webgpu --enable-tracing=disabled-by-default-gpu.dawn --trace-startup-file=file.json
+    <p>
+      2) GPU time, open the console, copy the time related data to a json file.
+    <p>
+  </text>
+  <h1 align='center' height=500>TFJS Timeline</h1>
+  <script src='echarts.min.js'></script>
+  <script src='echarts_util.js'></script>
+  <script src='data.js'></script>
+  <script src='trace_async.js'></script>
+  <!-- script src='../util/base.js'></script-->
+  <script>
+    // From util base.js.
+    function getRandomColor() {
+      var letters = '0123456789ABCDEF';
+      var color = '#';
+      for (var i = 0; i < 6; i++) {
+        color += letters[Math.floor(Math.random() * 16)];
+      }
+      return color;
+    }
+
+    // From util base.js.
+    function getParamByName(name, url) {
+      if (!url)
+        url = window.location.href;
+      name = name.replace(/[\[\]]/g, '\\$&');
+      let regex = new RegExp('[?&]' + name + '(=([^&#]*)|&|#|$)', 'i');
+      let match = regex.exec(url);
+      if (!match)
+        return null;
+      if (!match[2])
+        return '';
+      return decodeURIComponent(match[2].replace(/\+/g, ' '));
+    }
+
+    (async function () {
+      // Data used for echart.
+      let categories = [];
+      let categoriesIndex = 0;
+      let data = [];
+
+      const cpuDataPara = getParamByName('cpufile');
+      const gpuDataPara = getParamByName('gpufile');
+      const dadaRootDir = "timeline/";
+      const dataSuffix = ".json";
+      const cpuDataUrl = dadaRootDir + cpuDataPara + dataSuffix;
+      const gpuDataUrl = dadaRootDir + gpuDataPara + dataSuffix;
+
+      // 1. Get the base time from tracing time clock calibration.
+      let baseTime = (cpuDataPara != null) ? await getBaseFromTracing(cpuDataUrl) : [0, 0];
+
+      // 2. Create CPU model.
+      if (cpuDataPara != null) {
+        const cpuTraces = await parseCPUTrace(cpuDataUrl, 0, baseTime[0]);
+        const [cpuCategories, cpuCategoriesIndex] = createCPUModel(cpuTraces, data, categoriesIndex);
+        categoriesIndex = cpuCategoriesIndex;
+        categories = categories.concat(cpuCategories);
+      }
+
+      // 3. Create GPU model.
+      if (gpuDataPara != null) {
+        const gpuTraces = await parseGPUTrace(gpuDataUrl, 0, baseTime[1]);
+        const [gpuCategories, gpuCategoriesIndex] = createGPUModel(gpuTraces, data, categoriesIndex);
+        categoriesIndex = gpuCategoriesIndex;
+        categories = categories.concat(gpuCategories);
+      }
+
+      let option = getOption(categories, data);
+
+      // 4. Update DOM UI.
+      let div = document.createElement('div');
+      div.style.width = '100%';
+      div.style.height = '100%';
+      document.body.appendChild(div);
+      echarts.init(div).setOption(option);
+    })();
+  </script>
+</body>
