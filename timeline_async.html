@@ -1,6 +1,6 @@
 <body>
   <text>
-    <b>Advanced usage</b>
+    <b>Usage</b>
     <p>
       Some parameters are supported in url, and you may use them as 'index.html?key0=value0&key1=value1'.
       Supported parameters are:
@@ -50,6 +50,14 @@
       return decodeURIComponent(match[2].replace(/\+/g, ' '));
     }
 
+    function updateDOMUI(option) {
+      let div = document.createElement('div');
+      div.style.width = '100%';
+      div.style.height = '100%';
+      document.body.appendChild(div);
+      echarts.init(div).setOption(option);
+    }
+
     (async function () {
       // Get the data URL.
       const cpuDataPara = getParamByName('cpufile');
@@ -86,11 +94,7 @@
       let option = getOption(categories, data);
 
       // 4. Update DOM UI.
-      let div = document.createElement('div');
-      div.style.width = '100%';
-      div.style.height = '100%';
-      document.body.appendChild(div);
-      echarts.init(div).setOption(option);
+      updateDOMUI(option);
     })();
   </script>
 </body>

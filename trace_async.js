@@ -1,16 +1,16 @@
 'use strict';
 
 /*
-This is used to get the time origin for both CPU and GPU.
+This is used to get the time base for both CPU and GPU.
 First we extracted a CPU-GPU time from
 tracing(d3d12::CommandRecordingContext::ExecuteCommandList Detailed Timing).
 
-In tracing, we use first CPU tracing time as origin.
+In tracing, we use first CPU tracing time as base.
 However, the CPU time (and so GPU time) from Detailed Timing is far behind the
 first CPU tracing time(cpuTracingBase). So we need to adjust the GPU time
-so that it can be used with first CPU tracing time as CPU origin and GPU origin.
+so that it can be used with first CPU tracing time as CPU base and GPU base.
 
-GPU origin = GPU time from Detailed Timing + (first CPU tracing time - GPU time
+GPU base = GPU time from Detailed Timing + (first CPU tracing time - GPU time
 from Detailed Timing)
 
 Return in us.
@@ -34,17 +34,19 @@ function getBaseTime(rawTime, cpuTracingBase) {
   }
 }
 
+const eventNames = [
+  'DeviceBase::APICreateComputePipeline', 'CreateComputePipelineAsyncTask::Run',
+  'DeviceBase::APICreateShaderModule'
+];
+const baseTimeName =
+    'd3d12::CommandRecordingContext::ExecuteCommandList Detailed Timing';
+
 async function getBaseTimeFromTracing(traceFile = '') {
   if (traceFile == null) {
     console.warn('No tracing file!');
     return [0, 0];
   }
-  let eventNames = [
-    'DeviceBase::APICreateComputePipeline',
-    'CreateComputePipelineAsyncTask::Run', 'DeviceBase::APICreateShaderModule'
-  ];
-  let baseTimeName =
-      'd3d12::CommandRecordingContext::ExecuteCommandList Detailed Timing';
+
   let baseTime = '';
   let cpuTracingBase = 0;
 
@@ -75,12 +77,6 @@ async function getBaseTimeFromTracing(traceFile = '') {
 }
 
 async function parseCPUTrace(traceFile = '', totalTime = 0, baseCPUTime) {
-  let eventNames = [
-    'DeviceBase::APICreateComputePipeline',
-    'CreateComputePipelineAsyncTask::Run', 'DeviceBase::APICreateShaderModule'
-  ];
-  let timeOriginName =
-      'd3d12::CommandRecordingContext::ExecuteCommandList Detailed Timing';
   let results = {};
   let base_ts = 0;
   let baseTime = '';
@@ -102,29 +98,21 @@ async function parseCPUTrace(traceFile = '', totalTime = 0, baseCPUTime) {
 }
 
 async function parseGPUTrace(traceFile = '', totalTime = 0, baseGPUTime) {
-  let eventNames = [
-    'DeviceBase::APICreateComputePipeline',
-    'CreateComputePipelineAsyncTask::Run', 'DeviceBase::APICreateShaderModule'
-  ];
-  let timeOriginName =
-      'd3d12::CommandRecordingContext::ExecuteCommandList Detailed Timing';
-  let results = {};
-  let base_ts = 0;
-
   let jsonData = JSON.parse(await readFileAsync(traceFile));
-  // Raw GPU timestamp is ns, divided by 1000000 to get ms, align with CPU time.
-  const TICK2MS = 1 / 1000000;
-
   for (let i = 0; i < jsonData.length; i++) {
     let eventName = jsonData[i];
     // When parse GPU alone, use the first as base.
     if (baseGPUTime == 0) {
-      baseGPUTime = eventName['query'][0] * TICK2MS * 1000;
+      // eventName['query'][0] is ns, baseGPUTime is us.
+      baseGPUTime = eventName['query'][0] / 1000;
     }
+    // Raw GPU timestamp is ns, divided by 1000000 to get ms, align with CPU
+    // time.
+    const NS2MS = 1 / 1000000;
     eventName['query'][0] =
-        eventName['query'][0] * TICK2MS - baseGPUTime / 1000;
+        eventName['query'][0] * NS2MS - baseGPUTime / 1000;
     eventName['query'][1] =
-        eventName['query'][1] * TICK2MS - baseGPUTime / 1000;
+        eventName['query'][1] * NS2MS - baseGPUTime / 1000;
   }
   return jsonData;
 }
