@@ -51,11 +51,7 @@
     }
 
     (async function () {
-      // Data used for echart.
-      let categories = [];
-      let categoriesIndex = 0;
-      let data = [];
-
+      // Get the data URL.
       const cpuDataPara = getParamByName('cpufile');
       const gpuDataPara = getParamByName('gpufile');
       const dadaRootDir = "timeline/";
@@ -63,8 +59,13 @@
       const cpuDataUrl = dadaRootDir + cpuDataPara + dataSuffix;
       const gpuDataUrl = dadaRootDir + gpuDataPara + dataSuffix;
 
+      // Data used for echart.
+      let categories = [];
+      let categoriesIndex = 0;
+      let data = [];
+
       // 1. Get the base time from tracing time clock calibration.
-      let baseTime = (cpuDataPara != null) ? await getBaseFromTracing(cpuDataUrl) : [0, 0];
+      let baseTime = (cpuDataPara != null) ? await getBaseTimeFromTracing(cpuDataUrl) : [0, 0];
 
       // 2. Create CPU model.
       if (cpuDataPara != null) {

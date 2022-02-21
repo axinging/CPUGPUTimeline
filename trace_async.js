@@ -34,7 +34,7 @@ function getBaseTime(rawTime, cpuTracingBase) {
   }
 }
 
-async function getBaseFromTracing(traceFile = '') {
+async function getBaseTimeFromTracing(traceFile = '') {
   if (traceFile == null) {
     console.warn('No tracing file!');
     return [0, 0];
