@@ -21,16 +21,17 @@ function getBaseTime(rawTime, cpuTracingBase) {
   const cpuFreq = splitRawTime[4].split(':')[1];
   const gpuBase = splitRawTime[3].split(':')[1];
   const gpuFreq = splitRawTime[5].split(':')[1];
-  const TICK2US = 1000000;
+  // Second(s) to microsecond(us).
+  const S2US = 1000000;
   if (cpuTracingBase != 0) {
     // If this is used for CPU-GPU time: cpuTracingBase may possibly happens
     // before cpuBase. We use cpuTracingBase as real base, so the diff should be
     // applied to gpuBase.
-    const diff = cpuTracingBase - cpuBase / cpuFreq * TICK2US;
-    return [cpuTracingBase, gpuBase / gpuFreq * TICK2US + diff];
+    const diff = cpuTracingBase - cpuBase / cpuFreq * S2US;
+    return [cpuTracingBase, gpuBase / gpuFreq * S2US + diff];
   } else {
     // For GPU only, cpuBase is not used.
-    return [cpuBase / cpuFreq * TICK2US, gpuBase / gpuFreq * TICK2US];
+    return [cpuBase / cpuFreq * S2US, gpuBase / gpuFreq * S2US];
   }
 }
 
