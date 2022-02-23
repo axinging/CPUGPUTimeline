@@ -11,11 +11,6 @@ const fs = require('fs');
 async function main() {
   // Model data: Tracing predict.
   const rootDir = 'timeline\\';
-  let tracingStartJsonData =
-      JSON.parse(await readFileAsync(rootDir + 'tracing_start.json'));
-  let tracingEndJsonData =
-      JSON.parse(await readFileAsync(rootDir + 'tracing_end.json'));
-  console.log(tracingEndJsonData - tracingStartJsonData);
   let tracingPredictJsonData =
       JSON.parse(await readFileAsync(rootDir + 'tracing_predict.json'));
   console.log(tracingPredictJsonData['times'][0]);
@@ -31,10 +26,6 @@ async function main() {
 
   // Update UI.
   let modelTable = generateTableHead();
-  modelTable += generateRow({
-    name: 'Tracing mode before predict - after mapAsync in readback ',
-    data: (tracingEndJsonData - tracingStartJsonData),
-  });
   modelTable += generateRow({
     name: 'Tracing mode Predict time: ',
     data: (tracingPredictJsonData['times'][0]),
