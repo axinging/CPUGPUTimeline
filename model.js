@@ -1,5 +1,5 @@
-const {main} = require('./model_node.js');
+const {modelSummary} = require('./model_node.js');
 
 (async function() {
-  await main();
+  await modelSummary();
 })();

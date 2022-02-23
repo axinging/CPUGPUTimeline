@@ -4,6 +4,7 @@ async function parseGPUTrace(jsonData) {
   let sum = 0;
   for (let i = 0; i < jsonData.length; i++) {
     let queryData = jsonData[i]['query'];
+
     if (queryData.length == 2) {
       queryData = (queryData[1] - queryData[0]) / 1000000;
     } else if (queryData.length == 1) {
@@ -12,9 +13,8 @@ async function parseGPUTrace(jsonData) {
       console.error('Query data length is ' + queryData.length);
     }
     sum += Number(queryData);
-    traces.push({name: jsonData[i]['name'], query: queryData});
+    traces.push({ name: jsonData[i]['name'], query: queryData });
   }
-  console.log(sum);
   sum = Number(sum).toFixed(3);
   return [traces, sum];
 }
@@ -43,40 +43,27 @@ function generateTableHeadStart() {
 }
 
 function generateTableHeadEnd() {
-    return "</thead></table>";
-  }
+  return "</thead></table>";
+}
 
-  function generateTableHead(data) {
-    var header = generateTableHeadStart();
-    header += generateRow(data);
-    // header += generateTableHeadEnd();
-    return header;
-  }
+function generateTableHead(data) {
+  var header = generateTableHeadStart();
+  header += `<tr>${data}<tr>`;
+  // header += generateTableHeadEnd();
+  return header;
+}
 
-  function generateRows(data) {
-    var rows = '';
-    for (let element of data) {
-      rows += generateRow(element); 
-    }
-    return rows;
+function generateRows(data) {
+  var rows = '';
+  for (let element of data) {
+    rows += generateRow(element);
   }
-
-/*
-<table>
-    <thead>
-    <tr>
-        <th>name</th>
-        <th>height</th>
-        <th>place</th>
-    </tr>
-    </thead>
-*/
+  return rows;
+}
 
 function generateRow(data) {
   let tr = '<tr>';
-  console.log(data);
   for (key in data) {
-    // console.log(data[key]+ data[]);
     tr += `<th>${data[key]}</th>`;
   }
   tr += '</tr>';
@@ -84,9 +71,9 @@ function generateRow(data) {
 }
 
 module.exports = {
-    generateTableHead: generateTableHead,
-    generateTableHeadEnd: generateTableHeadEnd,
-    generateRow: generateRow,
-    generateRows: generateRows,
-    parseGPUTrace: parseGPUTrace,
+  generateTableHead: generateTableHead,
+  generateTableHeadEnd: generateTableHeadEnd,
+  generateRow: generateRow,
+  generateRows: generateRows,
+  parseGPUTrace: parseGPUTrace,
 };
