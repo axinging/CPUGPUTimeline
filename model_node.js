@@ -24,13 +24,6 @@ async function main() {
     console.log(profilePredictJsonData);
   }
 
-  // Update UI.
-  let modelTable = generateTableHead();
-  modelTable += generateRow({
-    name: 'Tracing mode Predict time: ',
-    data: (tracingPredictJsonData['times'][0]),
-  });
-
   // Ops data.
   let tracingJsonData =
       JSON.parse(await readFileAsync(rootDir + 'tracing_gpudata.json'));
@@ -41,6 +34,25 @@ async function main() {
   console.log(
       'Tracing GPU end - start = ' +
       (tracingGPUEnd - tracingGPUStart) / 1000000);
+
+  let mergedData;
+  let profileSumOut = 0;
+  if (enableProfile) {
+    let profileJsonData =
+        JSON.parse(await readFileAsync('profile_gpudata.json'));
+    const [profileData, profileSum] = await parseGPUTrace(profileJsonData);
+    profileSumOut = profileSum;
+    mergedData = mergeJsonArray(tracingData, profileData);
+  } else {
+    mergedData = tracingData;
+    console.log(mergedData[0]);
+  }
+  // Update UI.
+  let modelTable = generateTableHead();
+  modelTable += generateRow({
+    name: 'Tracing mode Predict time: ',
+    data: (tracingPredictJsonData['times'][0]),
+  });
 
   modelTable += generateRow({
     name: 'Tracing mode GPU timestamp last end - first start: ',
@@ -56,18 +68,7 @@ async function main() {
 
   modelTable += generateTableHeadEnd();
 
-  let mergedData;
-  let profileSumOut = 0;
-  if (enableProfile) {
-    let profileJsonData =
-        JSON.parse(await readFileAsync('profile_gpudata.json'));
-    const [profileData, profileSum] = await parseGPUTrace(profileJsonData);
-    profileSumOut = profileSum;
-    mergedData = mergeJsonArray(tracingData, profileData);
-  } else {
-    mergedData = tracingData;
-    console.log(mergedData[0]);
-  }
+
 
   // Update UI.
   let table = '';  // document.querySelector("#ops");
@@ -82,7 +83,7 @@ async function main() {
     table += generateRow({name: 'Sum', TracingQuery: tracingSum});
   }
   table += generateTableHeadEnd();
-  fs.writeFileSync('tabel.html', modelTable+table);
+  fs.writeFileSync('tabel.html', modelTable + table);
   console.log(table);
 }
 

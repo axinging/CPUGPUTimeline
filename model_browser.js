@@ -14,13 +14,6 @@ async function main() {
     console.log(profilePredictJsonData);
   }
 
-  // Update UI.
-  let modelTable = document.querySelector('#model');
-  generateRow(modelTable, {
-    name: 'Tracing mode Predict time: ',
-    data: (tracingPredictJsonData['times'][0]),
-  });
-
   // Ops data.
   let tracingJsonData =
       JSON.parse(await readFileAsync(rootDir + 'tracing_gpudata.json'));
@@ -31,18 +24,6 @@ async function main() {
   console.log(
       'Tracing GPU end - start = ' +
       (tracingGPUEnd - tracingGPUStart) / 1000000);
-
-  generateRow(modelTable, {
-    name: 'Tracing mode GPU timestamp last end - first start: ',
-    data: (tracingGPUEnd - tracingGPUStart) / 1000000,
-  });
-
-  if (enableProfile) {
-    generateRow(modelTable, {
-      name: 'Profile mode Predict time: ',
-      data: (profilePredictJsonData),
-    });
-  }
 
   let mergedData;
   let profileSumOut = 0;
@@ -56,6 +37,28 @@ async function main() {
     mergedData = tracingData;
     console.log(mergedData[0]);
   }
+
+  // Update UI.
+  let modelTable = document.querySelector('#model');
+  generateRow(modelTable, {
+    name: 'Tracing mode Predict time: ',
+    data: (tracingPredictJsonData['times'][0]),
+  });
+
+
+  generateRow(modelTable, {
+    name: 'Tracing mode GPU timestamp last end - first start: ',
+    data: (tracingGPUEnd - tracingGPUStart) / 1000000,
+  });
+
+  if (enableProfile) {
+    generateRow(modelTable, {
+      name: 'Profile mode Predict time: ',
+      data: (profilePredictJsonData),
+    });
+  }
+
+
 
   // Update UI.
   let table = document.querySelector('#ops');
