@@ -2,65 +2,13 @@
   <h1 align='center' height=500>TFJS Model Summary</h1>
   <text> time: ms</text>
   <script src='data.js'></script>
-  <script src='trace_op.js'></script>
+  <script src='trace_op_browser.js'></script>
+  <script src='model_browser.js'></script>
   <script>
-    (async function () {
-
-      // Model data: Tracing predict.
-      const rootDir = 'timeline\\';
-      let tracingStartJsonData = JSON.parse(await readFileAsync(rootDir + 'tracing_start.json'));
-      let tracingEndJsonData = JSON.parse(await readFileAsync(rootDir + 'tracing_end.json'));
-      console.log(tracingEndJsonData - tracingStartJsonData);
-      let tracingPredictJsonData = JSON.parse(await readFileAsync(rootDir + 'tracing_predict.json'));
-      console.log(tracingPredictJsonData['times'][0]);
-
-      // Model data: Profile predict.
-      let profilePredictJsonData = JSON.parse(await readFileAsync(rootDir + 'profile_predict.json'));
-      console.log(profilePredictJsonData);
-
-      // Update UI.
-      let modelTable = document.querySelector("#model");
-      generateRow(modelTable, {
-        name: "Tracing mode before predict - after mapAsync in readback ",
-        data: (tracingEndJsonData - tracingStartJsonData),
-      });
-      generateRow(modelTable, {
-        name: "Tracing mode Predict time: ",
-        data: (tracingPredictJsonData['times'][0]),
-      });
-
-      // Ops data.
-      let tracingJsonData = JSON.parse(await readFileAsync(rootDir + 'tracing_gpudata.json'));
-      const [tracingData, tracingSum] = await parseGPUTrace(tracingJsonData);
-      const tracingGPUStart = tracingJsonData[0]['query'][0];
-      const tracingGPUEnd = tracingJsonData[tracingJsonData.length - 1]['query'][1];
-      console.log("Tracing GPU end - start = " + (tracingGPUEnd - tracingGPUStart) / 1000000);
-
-      generateRow(modelTable, {
-        name: "Tracing mode GPU timestamp last end - first start: ",
-        data: (tracingGPUEnd - tracingGPUStart) / 1000000,
-      });
-
-      generateRow(modelTable, {
-        name: "Profile mode Predict time: ",
-        data: (profilePredictJsonData),
-      });
-
-      let profileJsonData = JSON.parse(await readFileAsync('profile_gpudata.json'));
-      const [profileData, profileSum] = await parseGPUTrace(profileJsonData);
-      const mergedData = mergeJsonArray(tracingData, profileData);
-
-      // Update UI.
-      let table = document.querySelector("#ops");
-      let headdata = Object.keys(mergedData[0]);
-      generateTableHead(table, headdata);
-      generateTable(table, mergedData);
-      generateRow(table, {
-        name: "Sum",
-        TracingQuery: tracingSum,
-        ProfileQuery: profileSum
-      });
-    })();
+      (async function () {
+        await main();
+        browser.downloads.showDefaultFolder();
+      })();
   </script>
   <table id="model">
     <!-- here goes our data! -->
