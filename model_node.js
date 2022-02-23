@@ -8,7 +8,8 @@ const {
 } = require('./trace_op_node.js');
 const fs = require('fs');
 
-async function main() {
+const enableProfile = false;
+async function createModel() {
   // Model data: Tracing predict.
   const rootDir = 'timeline\\';
   let tracingPredictJsonData =
@@ -16,7 +17,7 @@ async function main() {
   console.log(tracingPredictJsonData['times'][0]);
 
   // Model data: Profile predict.
-  const enableProfile = false;
+
   let profilePredictJsonData;
   if (enableProfile) {
     profilePredictJsonData =
@@ -31,10 +32,9 @@ async function main() {
   console.log('tracingSum=' + tracingSum);
   const tracingGPUStart = tracingJsonData[0]['query'][0];
   const tracingGPUEnd = tracingJsonData[tracingJsonData.length - 1]['query'][1];
-  console.log(
-      'Tracing GPU end - start = ' +
-      (tracingGPUEnd - tracingGPUStart) / 1000000);
+  const tracingGPULastFirst = (tracingGPUEnd - tracingGPUStart) / 1000000;
 
+  // In case we need to show both tracing and profile data.
   let mergedData;
   let profileSumOut = 0;
   if (enableProfile) {
@@ -47,6 +47,15 @@ async function main() {
     mergedData = tracingData;
     console.log(mergedData[0]);
   }
+  return [
+    mergedData, tracingGPULastFirst, tracingPredictJsonData, tracingSum,
+    profilePredictJsonData, profileSumOut
+  ];
+}
+async function main() {
+  const [mergedData, tracingGPULastFirst, tracingPredictJsonData, tracingSum, profilePredictJsonData, profileSumOut] =
+      await createModel();
+
   // Update UI.
   let modelTable = generateTableHead();
   modelTable += generateRow({
@@ -56,7 +65,7 @@ async function main() {
 
   modelTable += generateRow({
     name: 'Tracing mode GPU timestamp last end - first start: ',
-    data: (tracingGPUEnd - tracingGPUStart) / 1000000,
+    data: tracingGPULastFirst,
   });
 
   if (enableProfile) {
@@ -70,9 +79,7 @@ async function main() {
 
 
 
-  // Update UI.
-  let table = '';  // document.querySelector("#ops");
-  console.log(mergedData[0]);
+  let table = '';
   let headdata = Object.keys(mergedData[0]);
   table += generateTableHead(headdata);
   table += generateRows(mergedData);
