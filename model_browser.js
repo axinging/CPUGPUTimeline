@@ -7,7 +7,6 @@ async function createModel() {
   console.log(tracingPredictJsonData['times'][0]);
 
   // Model data: Profile predict.
-
   let profilePredictJsonData;
   if (enableProfile) {
     profilePredictJsonData =
@@ -43,9 +42,8 @@ async function createModel() {
   ];
 }
 
-async function main() {
-  const [mergedData, tracingGPULastFirst, tracingPredictJsonData, tracingSum, profilePredictJsonData, profileSumOut] =
-      await createModel();
+function updateUI(mergedData, tracingGPULastFirst, tracingPredictJsonData, tracingSum,
+  profilePredictJsonData, profileSumOut) {
   // Update UI.
   let modelTable = document.querySelector('#model');
   generateRow(modelTable, {
@@ -79,4 +77,12 @@ async function main() {
   } else {
     generateRow(table, {name: 'Sum', TracingQuery: tracingSum});
   }
+}
+
+async function main() {
+  const [mergedData, tracingGPULastFirst, tracingPredictJsonData, tracingSum, profilePredictJsonData, profileSumOut] =
+      await createModel();
+  updateUI(
+      mergedData, tracingGPULastFirst, tracingPredictJsonData, tracingSum,
+      profilePredictJsonData, profileSumOut);
 }

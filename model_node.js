@@ -17,7 +17,6 @@ async function createModel() {
   console.log(tracingPredictJsonData['times'][0]);
 
   // Model data: Profile predict.
-
   let profilePredictJsonData;
   if (enableProfile) {
     profilePredictJsonData =
@@ -52,10 +51,9 @@ async function createModel() {
     profilePredictJsonData, profileSumOut
   ];
 }
-async function main() {
-  const [mergedData, tracingGPULastFirst, tracingPredictJsonData, tracingSum, profilePredictJsonData, profileSumOut] =
-      await createModel();
 
+function updateUI(mergedData, tracingGPULastFirst, tracingPredictJsonData, tracingSum,
+  profilePredictJsonData, profileSumOut) {
   // Update UI.
   let modelTable = generateTableHead();
   modelTable += generateRow({
@@ -77,8 +75,6 @@ async function main() {
 
   modelTable += generateTableHeadEnd();
 
-
-
   let table = '';
   let headdata = Object.keys(mergedData[0]);
   table += generateTableHead(headdata);
@@ -91,7 +87,14 @@ async function main() {
   }
   table += generateTableHeadEnd();
   fs.writeFileSync('tabel.html', modelTable + table);
-  console.log(table);
+}
+
+async function main() {
+  const [mergedData, tracingGPULastFirst, tracingPredictJsonData, tracingSum, profilePredictJsonData, profileSumOut] =
+      await createModel();
+  updateUI(
+      mergedData, tracingGPULastFirst, tracingPredictJsonData, tracingSum,
+      profilePredictJsonData, profileSumOut);
 }
 
 module.exports = {
