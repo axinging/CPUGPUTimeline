@@ -181,8 +181,7 @@ async function modelSummary(logfileName, results) {
   if (Array.isArray(predictJsonData)) {
     for (var i = 0; i < predictJsonData.length; i++) {
       html += await singleModelSummary(
-          modelSummarDir + '\\' + modelNames[i], predictJsonData[i],
-          gpuJsonData[i]);
+          modelNames[i], predictJsonData[i], gpuJsonData[i]);
       writeSingleModelSummary(
           modelSummarDir + '\\' + modelNames[i], predictJsonData[i],
           gpuJsonData[i]);
@@ -190,7 +189,8 @@ async function modelSummary(logfileName, results) {
   } else {
     html +=
         await singleModelSummary(modelNames[i], predictJsonData, gpuJsonData);
-    writeSingleModelSummary(modelNames[i], predictJsonData, gpuJsonData);
+    writeSingleModelSummary(
+        modelSummarDir + '\\' + modelNames[i], predictJsonData, gpuJsonData);
   }
 
   const splitLogfileName = logfileName.split('\\');
