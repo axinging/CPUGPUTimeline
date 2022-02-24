@@ -1,9 +1,10 @@
 const {readFileAsync} = require('./data_node.js');
 const {
-  generateTableHead,
-  generateTableHeadEnd,
-  generateRow,
-  generateRows,
+  createTableHead,
+  createModelTableHead,
+  createTableHeadEnd,
+  createRow,
+  createRows,
   parseGPUTrace
 } = require('./trace_op_node.js');
 const fs = require('fs');
@@ -70,37 +71,37 @@ function updateUI(
     tracingSum, profilePredictJsonData, profileSumOut) {
   // Update UI.
   console.log('tableName =' + tableName);
-  let modelTable = generateTableHead(tableName);
-  modelTable += generateRow({
+  let modelTable = createModelTableHead(tableName);
+  modelTable += createRow({
     name: 'Tracing mode Predict time: ',
     data: (tracingPredictJsonData['times'][0]),
   });
 
-  modelTable += generateRow({
+  modelTable += createRow({
     name: 'Tracing mode GPU timestamp last end - first start: ',
     data: tracingGPULastFirst,
   });
 
   if (enableProfile) {
-    modelTable += generateRow({
+    modelTable += createRow({
       name: 'Profile mode Predict time: ',
       data: (profilePredictJsonData),
     });
   }
 
-  modelTable += generateTableHeadEnd();
+  modelTable += createTableHeadEnd();
 
   let table = '';
   let headdata = Object.keys(mergedData[0]);
-  table += generateTableHead(headdata);
-  table += generateRows(mergedData);
+  table += createTableHead(headdata);
+  table += createRows(mergedData);
   if (enableProfile) {
-    table += generateRow(
+    table += createRow(
         {name: 'Sum', TracingQuery: tracingSum, ProfileQuery: profileSumOut});
   } else {
-    table += generateRow({name: 'Sum', TracingQuery: tracingSum});
+    table += createRow({name: 'Sum', TracingQuery: tracingSum});
   }
-  table += generateTableHeadEnd();
+  table += createTableHeadEnd();
   return modelTable + table;
 }
 
@@ -151,6 +152,12 @@ function getModelNames(modelNamesJson) {
   return modelNames;
 }
 
+function writeSingleModelSummary(name, predictJsonData, gpuJsonData) {
+  console.log(predictJsonData);
+  fs.writeFileSync(name + '-predict.json', JSON.stringify(predictJsonData));
+  fs.writeFileSync(name + '-gpu.json', JSON.stringify(gpuJsonData));
+}
+
 async function modelSummary(logfileName, results) {
   if (logfileName == null) {
     console.error('No log file!');
@@ -161,17 +168,36 @@ async function modelSummary(logfileName, results) {
       getJsonFromString(strMatch, 'predictbegin', 'predictend');
   const gpuJsonData = getJsonFromString(strMatch, 'gpudatabegin', 'gpudataend');
 
+  const modelSummarDir = logfileName.split('.')[0];
+  try {
+    if (!fs.existsSync(modelSummarDir)) {
+      fs.mkdirSync(modelSummarDir)
+    }
+  } catch (err) {
+    console.error(err)
+  }
+
   let html = '';
   if (Array.isArray(predictJsonData)) {
     for (var i = 0; i < predictJsonData.length; i++) {
       html += await singleModelSummary(
-          modelNames[i], predictJsonData[i], gpuJsonData[i]);
+          modelSummarDir + '\\' + modelNames[i], predictJsonData[i],
+          gpuJsonData[i]);
+      writeSingleModelSummary(
+          modelSummarDir + '\\' + modelNames[i], predictJsonData[i],
+          gpuJsonData[i]);
     }
   } else {
     html +=
         await singleModelSummary(modelNames[i], predictJsonData, gpuJsonData);
+    writeSingleModelSummary(modelNames[i], predictJsonData, gpuJsonData);
   }
-  const modelSummaryFile = logfileName.split('.')[0] + '-modelsummary.html'
+
+  const splitLogfileName = logfileName.split('\\');
+  const modelSummaryFile = modelSummarDir + '\\' +
+      splitLogfileName[splitLogfileName.length - 1].split('.')[0] +
+      '-modelsummary.html';
+  console.log(modelSummaryFile);
   fs.writeFileSync(modelSummaryFile, html);
 }
 

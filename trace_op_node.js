@@ -10,16 +10,17 @@ async function parseGPUTrace(jsonData) {
     } else if (queryData.length == 1) {
       queryData = queryData[0];
     } else {
-      console.error('Query data length is ' + queryData.length);
+      console.error(
+          'Query data length ' + queryData.length + ' is not supported!');
     }
     sum += Number(queryData);
-    traces.push({ name: jsonData[i]['name'], query: queryData });
+    traces.push({name: jsonData[i]['name'], query: queryData});
   }
   sum = Number(sum).toFixed(3);
   return [traces, sum];
 }
 
-function mergeJsonArray(array1 = '', array2) {
+function mergeJsonArray(array1 = '', array2 = '') {
   const mergedArray = [];
   for (let i = 0; i < array1.length; i++) {
     let query1Data = array1[i]['query'];
@@ -37,43 +38,77 @@ function mergeJsonArray(array1 = '', array2) {
 }
 
 // View.
-// From https://www.valentinog.com/blog/html-table/
-function generateTableHeadStart() {
-  return "<table><thead>";
+function createTableHeadStart() {
+  return `<style>
+  table {
+    font-family: Arial, Helvetica, sans-serif;
+    border-collapse: collapse;
+    width: 30%;
+  }
+
+  td,
+  th {
+    border: 1px solid #ddd;
+    padding: 8px;
+  }
+
+  tr:nth-child(even) {
+    background-color: #f2f2f2;
+  }
+
+  tr:hover {
+    background-color: #ddd;
+  }
+
+  th {
+    padding-top: 12px;
+    padding-bottom: 12px;
+    text-align: left;
+    background-color: #f4fAfD;
+    color: black;
+  }
+  </style><table><thead>`;
 }
 
-function generateTableHeadEnd() {
-  return "</thead></table>";
+function createTableHeadEnd() {
+  return '</table>';
 }
 
-function generateTableHead(data) {
-  var header = generateTableHeadStart();
-  header += `<tr>${data}<tr>`;
-  // header += generateTableHeadEnd();
+function createModelTableHead(data) {
+  var header = createTableHeadStart();
+  header += `<th>${data}</th></thead>`;
   return header;
 }
 
-function generateRows(data) {
+function createTableHead(data) {
+  var header = createTableHeadStart();
+  header += createRow(data) + '</thead>';
+  return header;
+}
+
+
+function createRows(data) {
   var rows = '';
   for (let element of data) {
-    rows += generateRow(element);
+    rows += createRow(element);
   }
   return rows;
 }
 
-function generateRow(data) {
+function createRow(data) {
   let tr = '<tr>';
   for (key in data) {
-    tr += `<th>${data[key]}</th>`;
+    tr += `<td>${data[key]}</td>`;
   }
   tr += '</tr>';
   return tr;
 }
 
 module.exports = {
-  generateTableHead: generateTableHead,
-  generateTableHeadEnd: generateTableHeadEnd,
-  generateRow: generateRow,
-  generateRows: generateRows,
+  createTableHead: createTableHead,
+  createModelTableHead: createModelTableHead,
+  createTableHeadEnd: createTableHeadEnd,
+  createRow: createRow,
+  createRows: createRows,
   parseGPUTrace: parseGPUTrace,
 };

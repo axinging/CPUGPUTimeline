@@ -80,9 +80,9 @@ function createGPUModel(jsonData, data, categoriesIndex) {
 }
 
 async function readFileAsync(url, method = 'GET') {
-  return await fs.readFile(url, 'binary');
+  return await fs.readFile(url, "binary");
 }
 
 module.exports = {
-  readFileAsync: readFileAsync,
+    readFileAsync: readFileAsync,
 };
