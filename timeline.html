@@ -9,6 +9,8 @@
     <p>
       2) gpufile=[json file name]. Example: cpufile=mobilenetv2&gpufile=gpu_data.
     <p>
+      3) date=20220223213754&gpufile=6_25-bodypix-ResNet50-image-0.25-webgpu-gpu.
+    <p>
       Use the following file to generate CPU tracing and GPU time data:
     <p>
       1) CPU tracing:
@@ -62,7 +64,8 @@
       // Get the data URL.
       const cpuDataPara = getParamByName('cpufile');
       const gpuDataPara = getParamByName('gpufile');
-      const dadaRootDir = "timeline/";
+      const datestampPara = getParamByName('date');
+      const dadaRootDir = `timeline/${datestampPara}/`;
       const dataSuffix = ".json";
       const cpuDataUrl = dadaRootDir + cpuDataPara + dataSuffix;
       const gpuDataUrl = dadaRootDir + gpuDataPara + dataSuffix;
