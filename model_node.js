@@ -73,18 +73,23 @@ function updateUI(
   console.log('tableName =' + tableName);
   let modelTable = createModelTableHead(tableName);
   modelTable += createRow({
-    name: 'Tracing mode Predict time: ',
+    name: 'Tracing mode Predict time',
     data: (tracingPredictJsonData['times'][0]),
   });
 
   modelTable += createRow({
-    name: 'Tracing mode GPU timestamp last end - first start: ',
+    name: 'Tracing mode GPU timestamp last - first',
     data: tracingGPULastFirst,
+  });
+
+  modelTable += createRow({
+    name: 'Tracing mode GPU Ops sum',
+    data: tracingSum,
   });
 
   if (enableProfile) {
     modelTable += createRow({
-      name: 'Profile mode Predict time: ',
+      name: 'Profile mode Predict time',
       data: (profilePredictJsonData),
     });
   }
