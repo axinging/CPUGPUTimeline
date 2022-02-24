@@ -13,8 +13,7 @@ const fsasync = require('fs').promises;
 const enableProfile = false;
 
 async function createModelFromData(
-    tracingPredictJsonData, tracingJsonData, profilePredictJsonData,
-    profileJsonData) {
+    tracingJsonData, profilePredictJsonData, profileJsonData) {
   // Model data: Tracing predict.
   const rootDir = 'timeline\\';
 
@@ -36,8 +35,8 @@ async function createModelFromData(
     mergedData = tracingData;
   }
   return [
-    mergedData, tracingGPULastFirst, tracingPredictJsonData, tracingSum,
-    profilePredictJsonData, profileSumOut
+    mergedData, tracingGPULastFirst, tracingSum, profilePredictJsonData,
+    profileSumOut
   ];
 }
 
@@ -67,14 +66,14 @@ async function createModel() {
 }
 
 function updateUI(
-    tableName, mergedData, tracingGPULastFirst, tracingPredictJsonData,
-    tracingSum, profilePredictJsonData, profileSumOut) {
+    tableName, mergedData, tracingGPULastFirst, tracingPredictTime, tracingSum,
+    profilePredictJsonData, profileSumOut) {
   // Update UI.
   console.log('tableName =' + tableName);
   let modelTable = createModelTableHead(tableName);
   modelTable += createRow({
     name: 'Tracing mode Predict time',
-    data: (tracingPredictJsonData['times'][0]),
+    data: tracingPredictTime,
   });
 
   modelTable += createRow({
@@ -111,21 +110,20 @@ function updateUI(
 }
 
 async function singleModelSummary(
-    tabelName, tracingPredictJsonData, tracingJsonData,
+    tabelName, tracingPredictTime, tracingJsonData,
     profilePredictJsonData = null, profileJsonData = null) {
-  if (tracingPredictJsonData == null) {
+  if (tracingJsonData == null) {
     const [mergedData, tracingGPULastFirst, tracingPredictData, tracingSum, profilePredictData, profileSumOut] =
         await createModel();
     return updateUI(
-        tabelName, mergedData, tracingGPULastFirst, tracingPredictData,
-        tracingSum, profilePredictData, profileSumOut);
+        tabelName, mergedData, tracingGPULastFirst, tracingSum,
+        profilePredictData, profileSumOut);
   } else {
-    const [mergedData, tracingGPULastFirst, tracingPredictData, tracingSum, profilePredictData, profileSumOut] =
+    const [mergedData, tracingGPULastFirst, tracingSum, profilePredictData, profileSumOut] =
         await createModelFromData(
-            tracingPredictJsonData, tracingJsonData, profilePredictJsonData,
-            profileJsonData);
+            tracingJsonData, profilePredictJsonData, profileJsonData);
     return updateUI(
-        tabelName, mergedData, tracingGPULastFirst, tracingPredictJsonData,
+        tabelName, mergedData, tracingGPULastFirst, tracingPredictTime,
         tracingSum, profilePredictData, profileSumOut);
   }
 }
@@ -134,6 +132,7 @@ function getJsonFromString(str, start, end) {
   const regStr = String.raw`${start}.*?${end}`;
   var matchRegex = new RegExp(regStr, 'g');
   const matchResults = str.match(matchRegex);
+  console.log(start + '  matchResults length = ' + matchResults.length);
   if (Array.isArray(matchResults)) {
     var results = [];
     for (const item of matchResults) {
@@ -141,7 +140,8 @@ function getJsonFromString(str, start, end) {
     }
     return results;
   } else {
-    return JSON.parse(matchResults.replace(start, '').replace(end, ''));
+    return new Array(
+        JSON.parse(matchResults.replace(start, '').replace(end, '')));
   }
 }
 
@@ -177,7 +177,6 @@ function getModelNamesFromLog(logStr) {
 }
 
 function writeSingleModelSummary(name, predictJsonData, gpuJsonData) {
-  console.log(predictJsonData);
   fs.writeFileSync(name + '-predict.json', JSON.stringify(predictJsonData));
   fs.writeFileSync(name + '-gpu.json', JSON.stringify(gpuJsonData));
 }
@@ -204,20 +203,23 @@ async function modelSummary(logfileName, results) {
   }
 
   let html = '';
-  if (Array.isArray(predictJsonData)) {
-    for (var i = 0; i < predictJsonData.length; i++) {
+  // predictJsonData.length is the model number.
+  const modelCount = predictJsonData.length;
+  for (var i = 0; i < modelCount; i++) {
+    // Tracing may possible be repeated. predictJsonData[0]['times'].length is
+    // the repeat count.
+    const repeat = predictJsonData[0]['times'].length;
+    for (var j = 0; j < repeat; j++) {
+      const tracingPredictTime = predictJsonData[i]['times'][j];
       html += await singleModelSummary(
-          modelNames[i], predictJsonData[i], gpuJsonData[i]);
+          modelNames[i] + '-' + j, tracingPredictTime,
+          gpuJsonData[i * repeat + j]);
       writeSingleModelSummary(
-          modelSummarDir + '\\' + modelNames[i], predictJsonData[i],
-          gpuJsonData[i]);
+          modelSummarDir + '\\' + modelNames[i] + '-' + j, tracingPredictTime,
+          gpuJsonData[i * repeat + j]);
     }
-  } else {
-    html +=
-        await singleModelSummary(modelNames[i], predictJsonData, gpuJsonData);
-    writeSingleModelSummary(
-        modelSummarDir + '\\' + modelNames[i], predictJsonData, gpuJsonData);
   }
+
 
   const splitLogfileName = logfileName.split('\\');
   const modelSummaryFile = modelSummarDir + '\\' +
