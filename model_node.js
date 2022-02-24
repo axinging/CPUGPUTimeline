@@ -152,6 +152,25 @@ function getModelNames(modelNamesJson) {
   return modelNames;
 }
 
+function getName(item) {
+  return item.replace(/[\[\]]/g, '').replace(/\//g, '_').replace(/[,\s]/g, '-');
+}
+
+function getModelNamesFromLog(logStr) {
+  const matchRegex = /\[\d{1,2}\/\d{1,2}\].*webgpu/g;
+  const matchResults = logStr.match(matchRegex);
+  if (Array.isArray(matchResults)) {
+    var results = [];
+    for (const item of matchResults) {
+      const name = getName(item);
+      results.push(name);
+    }
+    return results;
+  } else {
+    return getName(matchResults);
+  }
+}
+
 function writeSingleModelSummary(name, predictJsonData, gpuJsonData) {
   console.log(predictJsonData);
   fs.writeFileSync(name + '-predict.json', JSON.stringify(predictJsonData));
@@ -162,11 +181,13 @@ async function modelSummary(logfileName, results) {
   if (logfileName == null) {
     console.error('No log file!');
   }
-  const modelNames = getModelNames(results);
-  const strMatch = await fsasync.readFile(logfileName, 'binary');
+  const logStr = await fsasync.readFile(logfileName, 'binary');
+  const modelNames =
+      results == null ? getModelNamesFromLog(logStr) : getModelNames(results);
+
   const predictJsonData =
-      getJsonFromString(strMatch, 'predictbegin', 'predictend');
-  const gpuJsonData = getJsonFromString(strMatch, 'gpudatabegin', 'gpudataend');
+      getJsonFromString(logStr, 'predictbegin', 'predictend');
+  const gpuJsonData = getJsonFromString(logStr, 'gpudatabegin', 'gpudataend');
 
   const modelSummarDir = logfileName.split('.')[0];
   try {
