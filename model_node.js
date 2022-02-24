@@ -209,15 +209,17 @@ async function modelSummary(logfileName, results) {
     // Tracing may possible be repeated. predictJsonData[0]['times'].length is
     // the repeat count.
     const repeat = predictJsonData[0]['times'].length;
+    const modelName = modelSummarDir + '\\' + modelNames[i];
     for (var j = 0; j < repeat; j++) {
       const tracingPredictTime = predictJsonData[i]['times'][j];
       html += await singleModelSummary(
           modelNames[i] + '-' + j, tracingPredictTime,
           gpuJsonData[i * repeat + j]);
-      writeSingleModelSummary(
-          modelSummarDir + '\\' + modelNames[i] + '-' + j, tracingPredictTime,
-          gpuJsonData[i * repeat + j]);
+      const name = modelName + '-' + j;
+      fs.writeFileSync(name + '-gpu.json', JSON.stringify(gpuJsonData[i * repeat + j]));
     }
+
+    fs.writeFileSync(modelName + '-predict.json', JSON.stringify(predictJsonData[i]));
   }
 
 
