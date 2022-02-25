@@ -48,6 +48,7 @@ function getName(item) {
 function getModelNamesFromLog(logStr) {
   const matchRegex = /\[\d{1,2}\/\d{1,2}\].*webgpu/g;
   const matchResults = logStr.match(matchRegex);
+
   if (Array.isArray(matchResults)) {
     var results = [];
     for (const item of matchResults) {
@@ -58,6 +59,12 @@ function getModelNamesFromLog(logStr) {
   } else {
     return getName(matchResults);
   }
+}
+
+function getAverageInfoFromLog(logStr) {
+  const matchRegex = /.*\[object Object\]/g;
+  const matchResults = logStr.match(matchRegex);
+  return matchResults;
 }
 
 async function createModelFromData(
@@ -155,6 +162,7 @@ async function modelSummary(logfileName, results) {
   const modelNames =
       results == null ? getModelNamesFromLog(logStr) : getModelNames(results);
 
+  const averageInfos = getAverageInfoFromLog(logStr);
   const predictJsonData =
       getJsonFromString(logStr, 'predictbegin', 'predictend');
   const gpuJsonData = getJsonFromString(logStr, 'gpudatabegin', 'gpudataend');
@@ -179,7 +187,8 @@ async function modelSummary(logfileName, results) {
     const tracingPredictTimes = predictJsonData[i]['times'];
     const gpuJsonDataForModel = gpuJsonData.slice(i * repeat, (i + 1) * repeat);
     html += await singleModelSummary(
-        modelNames[i], tracingPredictTimes, gpuJsonDataForModel);
+        modelNames[i] + '(' + averageInfos[i] + ')', tracingPredictTimes,
+        gpuJsonDataForModel);
 
     for (var j = 0; j < repeat; j++) {
       const tracingPredictTime = predictJsonData[i]['times'][j];

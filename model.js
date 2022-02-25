@@ -5,8 +5,10 @@ const {modelSummary} = require('./model_node.js');
   // single, repeat 10 20220224144903
   // multi repeat 10:  20220224145904
   // multimodel repeat 1: 20220224154340
+  // All: 20220225105143
   await modelSummary("20220224162630.log");
   await modelSummary("20220224144903.log");
   await modelSummary("20220224145904.log");
   await modelSummary("20220224154340.log");
+  await modelSummary("20220225105143.log");
 })();
