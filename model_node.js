@@ -1,4 +1,3 @@
-const {readFileAsync} = require('./data_node.js');
 const {
   createTableHead,
   createModelTableHead,
@@ -10,11 +9,14 @@ const {
 const fs = require('fs');
 const fsasync = require('fs').promises;
 
+async function readFileAsync(url, method = 'GET') {
+  return await fs.readFile(url, 'binary');
+}
+
 function getJsonFromString(str, start, end) {
   const regStr = String.raw`${start}.*?${end}`;
   var matchRegex = new RegExp(regStr, 'g');
   const matchResults = str.match(matchRegex);
-  console.log(start + '  matchResults length = ' + matchResults.length);
   if (Array.isArray(matchResults)) {
     var results = [];
     for (const item of matchResults) {
@@ -59,24 +61,22 @@ function getModelNamesFromLog(logStr) {
 }
 
 async function createModelFromData(
-    tracingPredictTime, tracingJsonData, profilePredictJsonData,
+    tracingPredictTime, tracingGpuData, profilePredictJsonData,
     profileJsonData) {
-  if (tracingJsonData == null) {
+  if (tracingGpuData == null) {
     throw 'Tracing JSON data is NULL!';
   }
   // Model data: Tracing predict.
   const rootDir = 'timeline\\';
-
-  console.log('tracingJsonData.length =' + tracingJsonData.length);
   // Ops data.
-  const repeat = tracingJsonData.length;
+  const repeat = tracingGpuData.length;
   const repeatTracingDataArray = [];
   const tracingGPULastFirstArray = [];
   const tracingSumArray = [];
 
   for (let i = 0; i < repeat; i++) {
     const [tracingData, tracingSum, tracingGPULastFirst] =
-        await parseGPUTrace(tracingJsonData[i]);
+        await parseGPUTrace(tracingGpuData[i]);
     repeatTracingDataArray.push(tracingData);
     tracingSumArray.push(tracingSum);
     tracingGPULastFirstArray.push(tracingGPULastFirst);
@@ -85,7 +85,7 @@ async function createModelFromData(
   const mergedArray = [];
 
   const opCount = repeatTracingDataArray[0].length;
-  console.log(tracingPredictTime);
+  const LENGTH_OF_DIGITALS = 3;
   for (let i = 0; i < opCount; i++) {
     var line = {};
     line['name'] = repeatTracingDataArray[0][i]['name'];
@@ -93,7 +93,8 @@ async function createModelFromData(
       if (repeatTracingDataArray[j][i]['name'] != line['name']) {
         throw 'Name not match! Please check the GPU JSON data!';
       }
-      line[`Query${j + 1}`] = repeatTracingDataArray[j][i]['query'];
+      line[`Query${j + 1}`] = Number(repeatTracingDataArray[j][i]['query'])
+                                  .toFixed(LENGTH_OF_DIGITALS);
     }
     // TODO: Add Profile support here.
     // line[`Query${repeat}`] = profileJsonData[j];
@@ -107,21 +108,24 @@ async function createModelFromData(
     var tracingSumRow = {};
     tracingSumRow['name'] = 'Sum of Ops';
     for (let j = 0; j < repeat; j++) {
-      tracingPredictTimeRow[`Query${j + 1}`] = tracingPredictTime[j];
-      tracingGPULastFirstRow[`Query${j + 1}`] = tracingGPULastFirstArray[j];
-      tracingSumRow[`Query${j + 1}`] = tracingSumArray[j]
+      tracingPredictTimeRow[`Query${j + 1}`] =
+          Number(tracingPredictTime[j]).toFixed(LENGTH_OF_DIGITALS);
+      tracingGPULastFirstRow[`Query${j + 1}`] =
+          Number(tracingGPULastFirstArray[j]).toFixed(LENGTH_OF_DIGITALS);
+      tracingSumRow[`Query${j + 1}`] =
+          Number(tracingSumArray[j]).toFixed(LENGTH_OF_DIGITALS);
     }
-    mergedArray.push(tracingSumRow);
-    mergedArray.push(tracingGPULastFirstRow);
-    mergedArray.push(tracingPredictTimeRow);
+    mergedArray.unshift(tracingSumRow);
+    mergedArray.unshift(tracingGPULastFirstRow);
+    mergedArray.unshift(tracingPredictTimeRow);
   }
-
+  console.log('Repeat :' + tracingGpuData.length + ', Ops: ' + opCount);
   return mergedArray;
 }
 
 function updateUI(tableName, mergedData) {
   // Update UI.
-  console.log('tableName =' + tableName);
+  console.log(tableName);
   let modelTable = createModelTableHead(tableName);
 
   modelTable += createTableHeadEnd();
@@ -135,10 +139,10 @@ function updateUI(tableName, mergedData) {
 }
 
 async function singleModelSummary(
-    tabelName, tracingPredictTime, tracingJsonData,
+    tabelName, tracingPredictTime, tracingGpuData,
     profilePredictJsonData = null, profileJsonData = null) {
   const mergedData = await createModelFromData(
-      tracingPredictTime, tracingJsonData, profilePredictJsonData,
+      tracingPredictTime, tracingGpuData, profilePredictJsonData,
       profileJsonData);
   return updateUI(tabelName, mergedData);
 }
@@ -179,7 +183,7 @@ async function modelSummary(logfileName, results) {
 
     for (var j = 0; j < repeat; j++) {
       const tracingPredictTime = predictJsonData[i]['times'][j];
-      const name = modelName + '-' + j;
+      const name = modelName + '-' + (j + 1);
       fs.writeFileSync(
           name + '-gpu.json', JSON.stringify(gpuJsonData[i * repeat + j]));
     }
