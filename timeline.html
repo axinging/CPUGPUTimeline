@@ -76,7 +76,7 @@
       let data = [];
 
       // 1. Get the base time from tracing time clock calibration.
-      let baseTime = (cpuDataPara != null) ? await getBaseTimeFromTracing(cpuDataUrl) : [0, 0];
+      let baseTime = (cpuDataPara != null) ? await getBaseTimeFromTracing(cpuDataUrl) : [0, 0, 19200000];
 
       // 2. Create CPU model.
       if (cpuDataPara != null) {
@@ -87,8 +87,10 @@
       }
 
       // 3. Create GPU model.
+      const isRawTimestamp = true;
       if (gpuDataPara != null) {
-        const gpuTraces = await parseGPUTrace(gpuDataUrl, 0, baseTime[1]);
+        console.log("dsfa");
+        const gpuTraces = await parseGPUTrace(gpuDataUrl, 0, baseTime[1], baseTime[2], isRawTimestamp);
         const [gpuCategories, gpuCategoriesIndex] = createGPUModel(gpuTraces, data, categoriesIndex);
         categoriesIndex = gpuCategoriesIndex;
         categories = categories.concat(gpuCategories);

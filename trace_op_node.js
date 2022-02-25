@@ -1,5 +1,21 @@
-// Data.
-async function parseGPUTrace(jsonData, lastFirst = true) {
+function getAdjustTime(rawTime, isRawTimestamp, gpuFreq) {
+  let adjustTime = 0;
+  if (isRawTimestamp) {
+    // raw timestamp is ticks.
+    adjustTime = rawTime * 1000 / gpuFreq;
+  } else {
+    // converted GPU timestamp is ns. Converted to ms.
+    adjustTime = rawTime / 1000000;
+  }
+  return adjustTime;
+}
+
+// Data. For Profile data, no lastFirst.
+async function parseGPUTrace(jsonData, lastFirst = true, isRawTimestamp = false) {
+  const gpuFreq = 19200000;
+  if (isRawTimestamp && gpuFreq == 0) {
+    throw 'isRawTimeStamp is true but gpuFreq is 0';
+  }
   const traces = [];
   let sum = 0;
 
@@ -7,15 +23,17 @@ async function parseGPUTrace(jsonData, lastFirst = true) {
   if (lastFirst) {
     const tracingGPUStart = jsonData[0]['query'][0];
     const tracingGPUEnd = jsonData[jsonData.length - 1]['query'][1];
-    tracingGPULastFirst = (tracingGPUEnd - tracingGPUStart) / 1000000;
+
+    tracingGPULastFirst = getAdjustTime((tracingGPUEnd - tracingGPUStart), isRawTimestamp, gpuFreq);
   }
 
   for (let i = 0; i < jsonData.length; i++) {
     let queryData = jsonData[i]['query'];
 
     if (queryData.length == 2) {
-      queryData = (queryData[1] - queryData[0]) / 1000000;
+      queryData = getAdjustTime((queryData[1] - queryData[0]), isRawTimestamp, gpuFreq);
     } else if (queryData.length == 1) {
+      // FOr profile data, alreay in ms.
       queryData = queryData[0];
     } else {
       console.error(

@@ -27,11 +27,11 @@ function getBaseTime(rawTime, cpuTracingBase) {
     // If this is used for CPU-GPU time: cpuTracingBase may possibly happens
     // before cpuBase. We use cpuTracingBase as real base, so the diff should be
     // applied to gpuBase.
-    const diff = cpuTracingBase - cpuBase / cpuFreq * S2US;
-    return [cpuTracingBase, gpuBase / gpuFreq * S2US + diff];
+    const diff = cpuTracingBase - cpuBase * S2US / cpuFreq;
+    return [cpuTracingBase, gpuBase * S2US / gpuFreq + diff, gpuFreq];
   } else {
     // For GPU only, cpuBase is not used.
-    return [cpuBase / cpuFreq * S2US, gpuBase / gpuFreq * S2US];
+    return [cpuBase / cpuFreq * S2US, gpuBase * S2US / gpuFreq, gpuFreq];
   }
 }
 
@@ -45,7 +45,7 @@ const baseTimeName =
 async function getBaseTimeFromTracing(traceFile = '') {
   if (traceFile == null) {
     console.warn('No tracing file!');
-    return [0, 0];
+    return [0, 0, 0];
   }
 
   let baseTime = '';
@@ -74,7 +74,7 @@ async function getBaseTimeFromTracing(traceFile = '') {
   if (baseTime == '') {
     console.warn('Tracing has no Detailed Timing!');
   }
-  return [0, 0];
+  return [0, 0, 0];
 }
 
 async function parseCPUTrace(traceFile = '', totalTime = 0, baseCPUTime) {
@@ -98,22 +98,42 @@ async function parseCPUTrace(traceFile = '', totalTime = 0, baseCPUTime) {
   return results;
 }
 
-async function parseGPUTrace(traceFile = '', totalTime = 0, baseGPUTime) {
+function getAdjustTimeWithBase(rawTime, baseGPUTime, isRawTimestamp, gpuFreq) {
+  let adjustTime = 0;
+  if (isRawTimestamp) {
+    // raw timestamp is ticks, baseGPUTime is us.
+    const S2MS = 1000;
+    console.log(adjustTime);
+    adjustTime = rawTime * S2MS / gpuFreq - baseGPUTime / 1000;
+  } else {
+    // GPU timestamp is ns, divided by 1000000 to get ms, align with CPU
+    // time.
+    const NS2MS = 1 / 1000000;
+    adjustTime = rawTime * NS2MS - baseGPUTime / 1000;
+  }
+  console.log(adjustTime);
+  return adjustTime;
+}
+
+async function parseGPUTrace(
+    traceFile = '', totalTime = 0, baseGPUTime, gpuFreq = 19200000,
+    isRawTimestamp = false) {
   let jsonData = JSON.parse(await readFileAsync(traceFile));
   for (let i = 0; i < jsonData.length; i++) {
     let eventName = jsonData[i];
     // When parse GPU alone, use the first as base.
     if (baseGPUTime == 0) {
-      // eventName['query'][0] is ns, baseGPUTime is us.
-      baseGPUTime = eventName['query'][0] / 1000;
+      // For raw: eventName['query'][0] is raw timestamp, baseGPUTime is us.
+      // For non raw: eventName['query'][0] is ns, baseGPUTime is us.
+      baseGPUTime = isRawTimestamp ? eventName['query'][0] * 1000000 / gpuFreq :
+                                     eventName['query'][0] / 1000;
     }
     // Raw GPU timestamp is ns, divided by 1000000 to get ms, align with CPU
     // time.
-    const NS2MS = 1 / 1000000;
-    eventName['query'][0] =
-        eventName['query'][0] * NS2MS - baseGPUTime / 1000;
-    eventName['query'][1] =
-        eventName['query'][1] * NS2MS - baseGPUTime / 1000;
+    eventName['query'][0] = getAdjustTimeWithBase(
+        eventName['query'][0], baseGPUTime, isRawTimestamp, gpuFreq);
+    eventName['query'][1] = getAdjustTimeWithBase(
+        eventName['query'][1], baseGPUTime, isRawTimestamp, gpuFreq);
   }
   return jsonData;
 }
