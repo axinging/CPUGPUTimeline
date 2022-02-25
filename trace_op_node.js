@@ -1,7 +1,15 @@
 // Data.
-async function parseGPUTrace(jsonData) {
+async function parseGPUTrace(jsonData, lastFirst = true) {
   const traces = [];
   let sum = 0;
+
+  let tracingGPULastFirst = 0;
+  if (lastFirst) {
+    const tracingGPUStart = jsonData[0]['query'][0];
+    const tracingGPUEnd = jsonData[jsonData.length - 1]['query'][1];
+    tracingGPULastFirst = (tracingGPUEnd - tracingGPUStart) / 1000000;
+  }
+
   for (let i = 0; i < jsonData.length; i++) {
     let queryData = jsonData[i]['query'];
 
@@ -17,7 +25,7 @@ async function parseGPUTrace(jsonData) {
     traces.push({name: jsonData[i]['name'], query: queryData});
   }
   sum = Number(sum).toFixed(3);
-  return [traces, sum];
+  return [traces, sum, tracingGPULastFirst];
 }
 
 function mergeJsonArray(array1 = '', array2 = '') {
