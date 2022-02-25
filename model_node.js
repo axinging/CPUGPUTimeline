@@ -82,9 +82,10 @@ async function createModelFromData(
   const tracingGPULastFirstArray = [];
   const tracingSumArray = [];
 
+  const isRawTimestamp = true;
   for (let i = 0; i < repeat; i++) {
     const [tracingData, tracingSum, tracingGPULastFirst] =
-        await parseGPUTrace(tracingGpuData[i]);
+        await parseGPUTrace(tracingGpuData[i],true, isRawTimestamp);
     repeatTracingDataArray.push(tracingData);
     tracingSumArray.push(tracingSum);
     tracingGPULastFirstArray.push(tracingGPULastFirst);
