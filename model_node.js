@@ -62,6 +62,7 @@ function getModelNamesFromLog(logStr) {
 }
 
 function getAverageInfoFromLog(logStr) {
+  // TODO: This regex takes too long.
   const matchRegex = /.*\[object Object\]/g;
   const matchResults = logStr.match(matchRegex);
   return matchResults;
@@ -187,8 +188,9 @@ async function modelSummary(logfileName, results) {
     const tracingPredictTimes = predictJsonData[i]['times'];
     const gpuJsonDataForModel = gpuJsonData.slice(i * repeat, (i + 1) * repeat);
     html += await singleModelSummary(
-        modelNames[i] + '(' + averageInfos[i] + ')', tracingPredictTimes,
-        gpuJsonDataForModel);
+        modelNames[i].split('-')[0] + '-' +
+            averageInfos[i].replace('[object Object]', ''),
+        tracingPredictTimes, gpuJsonDataForModel);
 
     for (var j = 0; j < repeat; j++) {
       const tracingPredictTime = predictJsonData[i]['times'][j];
