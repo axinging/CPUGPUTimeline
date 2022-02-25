@@ -10,95 +10,6 @@ const {
 const fs = require('fs');
 const fsasync = require('fs').promises;
 
-const enableProfile = false;
-
-async function createModelFromData(
-    tracingPredictTime, tracingJsonData, profilePredictJsonData,
-    profileJsonData) {
-  // Model data: Tracing predict.
-  const rootDir = 'timeline\\';
-
-  console.log('tracingJsonData.length =' + tracingJsonData.length);
-  // Ops data.
-  const repeat = tracingJsonData.length;
-  const mergedData0 = [];
-  const tracingGPULastFirstArray = [];
-  const tracingSumArray = [];
-
-  for (let i = 0; i < repeat; i++) {
-    const [tracingData, tracingSum, tracingGPULastFirst] =
-        await parseGPUTrace(tracingJsonData[i]);
-    mergedData0.push(tracingData);
-    tracingSumArray.push(tracingSum);
-    tracingGPULastFirstArray.push(tracingGPULastFirst);
-  }
-
-  const mergedArray = [];
-
-  const opCount = mergedData0[0].length;
-  console.log('opCount =' + opCount);
-  console.log(tracingPredictTime);
-  for (let i = 0; i < opCount; i++) {
-    var line = {};
-    line['name'] = mergedData0[0][i]['name'];
-    for (let j = 0; j < repeat; j++) {
-      line[`Query${j + 1}`] = mergedData0[j][i]['query'];
-    }
-    mergedArray.push(line);
-  }
-  {
-    var tracingPredictTimeRow = {};
-    tracingPredictTimeRow['name'] = 'Tracing mode Predict time';
-    var tracingGPULastFirstRow = {};
-    tracingGPULastFirstRow['name'] = 'Tracing mode GPU last first';
-    var tracingSumRow = {};
-    tracingSumRow['name'] = 'Sum of Ops';
-    for (let j = 0; j < repeat; j++) {
-      tracingPredictTimeRow[`Query${j + 1}`] = tracingPredictTime[j];
-      tracingGPULastFirstRow[`Query${j + 1}`] = tracingGPULastFirstArray[j];
-      tracingSumRow[`Query${j + 1}`] = tracingSumArray[j]
-    }
-    mergedArray.push(tracingSumRow);
-    mergedArray.push(tracingGPULastFirstRow);
-    mergedArray.push(tracingPredictTimeRow);
-  }
-
-  let profileSumOut = 0;
-  const tracingSum = 0;
-  const tracingGPULastFirst = 0;
-  return [
-    mergedArray, tracingGPULastFirst, tracingSum, profilePredictJsonData,
-    profileSumOut
-  ];
-}
-
-function updateUI(
-    tableName, mergedData, tracingGPULastFirst, tracingPredictTime, tracingSum,
-    profilePredictJsonData, profileSumOut) {
-  // Update UI.
-  console.log('tableName =' + tableName);
-  let modelTable = createModelTableHead(tableName);
-
-  modelTable += createTableHeadEnd();
-
-  let table = '';
-  let headdata = Object.keys(mergedData[0]);
-  table += createTableHead(headdata);
-  table += createRows(mergedData);
-  table += createTableHeadEnd();
-  return modelTable + table;
-}
-
-async function singleModelSummary(
-    tabelName, tracingPredictTime, tracingJsonData,
-    profilePredictJsonData = null, profileJsonData = null) {
-  const [mergedData, tracingGPULastFirst, profilePredictData] =
-      await createModelFromData(
-          tracingPredictTime, tracingJsonData, profilePredictJsonData,
-          profileJsonData);
-  return updateUI(tabelName, mergedData, 0, 0, 0, 0, 0);
-}
-
 function getJsonFromString(str, start, end) {
   const regStr = String.raw`${start}.*?${end}`;
   var matchRegex = new RegExp(regStr, 'g');
@@ -147,9 +58,89 @@ function getModelNamesFromLog(logStr) {
   }
 }
 
-function writeSingleModelSummary(name, predictJsonData, gpuJsonData) {
-  fs.writeFileSync(name + '-predict.json', JSON.stringify(predictJsonData));
-  fs.writeFileSync(name + '-gpu.json', JSON.stringify(gpuJsonData));
+async function createModelFromData(
+    tracingPredictTime, tracingJsonData, profilePredictJsonData,
+    profileJsonData) {
+  if (tracingJsonData == null) {
+    throw 'Tracing JSON data is NULL!';
+  }
+  // Model data: Tracing predict.
+  const rootDir = 'timeline\\';
+
+  console.log('tracingJsonData.length =' + tracingJsonData.length);
+  // Ops data.
+  const repeat = tracingJsonData.length;
+  const repeatTracingDataArray = [];
+  const tracingGPULastFirstArray = [];
+  const tracingSumArray = [];
+
+  for (let i = 0; i < repeat; i++) {
+    const [tracingData, tracingSum, tracingGPULastFirst] =
+        await parseGPUTrace(tracingJsonData[i]);
+    repeatTracingDataArray.push(tracingData);
+    tracingSumArray.push(tracingSum);
+    tracingGPULastFirstArray.push(tracingGPULastFirst);
+  }
+
+  const mergedArray = [];
+
+  const opCount = repeatTracingDataArray[0].length;
+  console.log(tracingPredictTime);
+  for (let i = 0; i < opCount; i++) {
+    var line = {};
+    line['name'] = repeatTracingDataArray[0][i]['name'];
+    for (let j = 0; j < repeat; j++) {
+      if (repeatTracingDataArray[j][i]['name'] != line['name']) {
+        throw 'Name not match! Please check the GPU JSON data!';
+      }
+      line[`Query${j + 1}`] = repeatTracingDataArray[j][i]['query'];
+    }
+    // TODO: Add Profile support here.
+    // line[`Query${repeat}`] = profileJsonData[j];
+    mergedArray.push(line);
+  }
+  {
+    var tracingPredictTimeRow = {};
+    tracingPredictTimeRow['name'] = 'Tracing mode Predict time';
+    var tracingGPULastFirstRow = {};
+    tracingGPULastFirstRow['name'] = 'Tracing mode GPU last first';
+    var tracingSumRow = {};
+    tracingSumRow['name'] = 'Sum of Ops';
+    for (let j = 0; j < repeat; j++) {
+      tracingPredictTimeRow[`Query${j + 1}`] = tracingPredictTime[j];
+      tracingGPULastFirstRow[`Query${j + 1}`] = tracingGPULastFirstArray[j];
+      tracingSumRow[`Query${j + 1}`] = tracingSumArray[j]
+    }
+    mergedArray.push(tracingSumRow);
+    mergedArray.push(tracingGPULastFirstRow);
+    mergedArray.push(tracingPredictTimeRow);
+  }
+
+  return mergedArray;
+}
+
+function updateUI(tableName, mergedData) {
+  // Update UI.
+  console.log('tableName =' + tableName);
+  let modelTable = createModelTableHead(tableName);
+
+  modelTable += createTableHeadEnd();
+
+  let table = '';
+  let headdata = Object.keys(mergedData[0]);
+  table += createTableHead(headdata);
+  table += createRows(mergedData);
+  table += createTableHeadEnd();
+  return modelTable + table;
+}
+
+async function singleModelSummary(
+    tabelName, tracingPredictTime, tracingJsonData,
+    profilePredictJsonData = null, profileJsonData = null) {
+  const mergedData = await createModelFromData(
+      tracingPredictTime, tracingJsonData, profilePredictJsonData,
+      profileJsonData);
+  return updateUI(tabelName, mergedData);
 }
 
 async function modelSummary(logfileName, results) {
