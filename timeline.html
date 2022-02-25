@@ -65,6 +65,7 @@
       const cpuDataPara = getParamByName('cpufile');
       const gpuDataPara = getParamByName('gpufile');
       const datestampPara = getParamByName('date');
+      const isRawTimestamp = getParamByName('rawtimestamp') != 'false';
       const dadaRootDir = `timeline/${datestampPara}/`;
       const dataSuffix = ".json";
       const cpuDataUrl = dadaRootDir + cpuDataPara + dataSuffix;
@@ -87,7 +88,6 @@
       }
 
       // 3. Create GPU model.
-      const isRawTimestamp = true;
       if (gpuDataPara != null) {
         console.log("dsfa");
         const gpuTraces = await parseGPUTrace(gpuDataUrl, 0, baseTime[1], baseTime[2], isRawTimestamp);

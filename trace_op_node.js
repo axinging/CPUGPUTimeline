@@ -106,9 +106,9 @@ function createModelTableHead(data) {
   return header;
 }
 
-function createTableHead(data, modelName) {
+function createTableHead(data, modelName, date) {
   var header = createTableHeadStart();
-  header += createRowWithLink(data, modelName) + '</thead>';
+  header += createRowWithLink(data, modelName, date) + '</thead>';
   return header;
 }
 
@@ -130,13 +130,13 @@ function createRow(data) {
   return tr;
 }
 
-function createRowWithLink(data, modelName) {
+function createRowWithLink(data, modelName, date) {
   let tr = '<tr>';
   for (key in data) {
     if (data[key] != 'name') {
       const gpuDataFile = `${modelName}-${key}`;
       console.log(modelName + ",,," + key + ",,," + `${key}` + ",,,,"+ gpuDataFile)
-      tr += `<td><a href="./../../timeline.html?date=20220225105143&gpufile=${
+      tr += `<td><a href="./../../timeline.html?date=${date}&gpufile=${
           modelName}-${key}">${data[key]}</a></td>`;
     } else {
       tr += `<td>${data[key]}</td>`;

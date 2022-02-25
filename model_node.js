@@ -8,6 +8,7 @@ const {
 } = require('./trace_op_node.js');
 const fs = require('fs');
 const fsasync = require('fs').promises;
+require('dotenv').config();
 
 async function readFileAsync(url, method = 'GET') {
   return await fs.readFile(url, 'binary');
@@ -82,7 +83,8 @@ async function createModelFromData(
   const tracingGPULastFirstArray = [];
   const tracingSumArray = [];
 
-  const isRawTimestamp = true;
+  // export IS_RAW_TIMESTAMP=false
+  const isRawTimestamp = process.env.IS_RAW_TIMESTAMP != 'false';
   for (let i = 0; i < repeat; i++) {
     const [tracingData, tracingSum, tracingGPULastFirst] =
         await parseGPUTrace(tracingGpuData[i],true, isRawTimestamp);
@@ -132,7 +134,7 @@ async function createModelFromData(
   return mergedArray;
 }
 
-function updateUI(tableName, mergedData, modelName) {
+function updateUI(tableName, mergedData, modelName, date) {
   // Update UI.
   console.log(tableName);
   let modelTable = createModelTableHead(tableName);
@@ -141,19 +143,19 @@ function updateUI(tableName, mergedData, modelName) {
 
   let table = '';
   let headdata = Object.keys(mergedData[0]);
-  table += createTableHead(headdata, modelName);
+  table += createTableHead(headdata, modelName, date);
   table += createRows(mergedData);
   table += createTableHeadEnd();
   return modelTable + table;
 }
 
 async function singleModelSummary(
-    tabelName, tracingPredictTime, tracingGpuData, modelName,
+    tabelName, tracingPredictTime, tracingGpuData, modelName, date,
     profilePredictJsonData = null, profileJsonData = null) {
   const mergedData = await createModelFromData(
       tracingPredictTime, tracingGpuData, profilePredictJsonData,
       profileJsonData);
-  return updateUI(tabelName, mergedData, modelName);
+  return updateUI(tabelName, mergedData, modelName, date);
 }
 
 async function modelSummary(logfileName, results) {
@@ -179,6 +181,9 @@ async function modelSummary(logfileName, results) {
   }
 
   let html = '';
+  const splitLogfileName = logfileName.split('\\');
+  const date = splitLogfileName[splitLogfileName.length - 1].split('.')[0];
+
   // predictJsonData.length is the model number.
   const modelCount = predictJsonData.length;
   for (var i = 0; i < modelCount; i++) {
@@ -191,7 +196,7 @@ async function modelSummary(logfileName, results) {
     html += await singleModelSummary(
         modelNames[i].split('-')[0] + '-' +
             averageInfos[i].replace('[object Object]', ''),
-        tracingPredictTimes, gpuJsonDataForModel, modelNames[i]);
+        tracingPredictTimes, gpuJsonDataForModel, modelNames[i], date);
 
     for (var j = 0; j < repeat; j++) {
       const tracingPredictTime = predictJsonData[i]['times'][j];
@@ -204,9 +209,8 @@ async function modelSummary(logfileName, results) {
         modelName + '-predict.json', JSON.stringify(predictJsonData[i]));
   }
 
-  const splitLogfileName = logfileName.split('\\');
-  const modelSummaryFile = modelSummarDir + '\\' +
-      splitLogfileName[splitLogfileName.length - 1].split('.')[0] +
+  const isRawTimestamp = process.env.IS_RAW_TIMESTAMP != 'false';
+  const modelSummaryFile = modelSummarDir + '\\' + date + '-raw' + isRawTimestamp +
       '-modelsummary.html';
   console.log(modelSummaryFile);
   fs.writeFileSync(modelSummaryFile, html);
