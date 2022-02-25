@@ -196,7 +196,7 @@ async function modelSummary(logfileName, results) {
       const tracingPredictTime = predictJsonData[i]['times'][j];
       const name = modelName + '-' + (j + 1);
       fs.writeFileSync(
-          name + '-gpu.json', JSON.stringify(gpuJsonData[i * repeat + j]));
+          name + '.json', JSON.stringify(gpuJsonData[i * repeat + j]));
     }
 
     fs.writeFileSync(
