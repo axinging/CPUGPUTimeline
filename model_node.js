@@ -131,7 +131,7 @@ async function createModelFromData(
   return mergedArray;
 }
 
-function updateUI(tableName, mergedData) {
+function updateUI(tableName, mergedData, modelName) {
   // Update UI.
   console.log(tableName);
   let modelTable = createModelTableHead(tableName);
@@ -140,19 +140,19 @@ function updateUI(tableName, mergedData) {
 
   let table = '';
   let headdata = Object.keys(mergedData[0]);
-  table += createTableHead(headdata);
+  table += createTableHead(headdata, modelName);
   table += createRows(mergedData);
   table += createTableHeadEnd();
   return modelTable + table;
 }
 
 async function singleModelSummary(
-    tabelName, tracingPredictTime, tracingGpuData,
+    tabelName, tracingPredictTime, tracingGpuData, modelName,
     profilePredictJsonData = null, profileJsonData = null) {
   const mergedData = await createModelFromData(
       tracingPredictTime, tracingGpuData, profilePredictJsonData,
       profileJsonData);
-  return updateUI(tabelName, mergedData);
+  return updateUI(tabelName, mergedData, modelName);
 }
 
 async function modelSummary(logfileName, results) {
@@ -190,7 +190,7 @@ async function modelSummary(logfileName, results) {
     html += await singleModelSummary(
         modelNames[i].split('-')[0] + '-' +
             averageInfos[i].replace('[object Object]', ''),
-        tracingPredictTimes, gpuJsonDataForModel);
+        tracingPredictTimes, gpuJsonDataForModel, modelNames[i]);
 
     for (var j = 0; j < repeat; j++) {
       const tracingPredictTime = predictJsonData[i]['times'][j];

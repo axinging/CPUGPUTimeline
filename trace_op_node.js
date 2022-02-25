@@ -88,9 +88,9 @@ function createModelTableHead(data) {
   return header;
 }
 
-function createTableHead(data) {
+function createTableHead(data, modelName) {
   var header = createTableHeadStart();
-  header += createRow(data) + '</thead>';
+  header += createRowWithLink(data, modelName) + '</thead>';
   return header;
 }
 
@@ -107,6 +107,22 @@ function createRow(data) {
   let tr = '<tr>';
   for (key in data) {
     tr += `<td>${data[key]}</td>`;
+  }
+  tr += '</tr>';
+  return tr;
+}
+
+function createRowWithLink(data, modelName) {
+  let tr = '<tr>';
+  for (key in data) {
+    if (data[key] != 'name') {
+      const gpuDataFile = `${modelName}-${key}`;
+      console.log(modelName + ",,," + key + ",,," + `${key}` + ",,,,"+ gpuDataFile)
+      tr += `<td><a href="./../../timeline.html?date=20220225105143&gpufile=${
+          modelName}-${key}">${data[key]}</a></td>`;
+    } else {
+      tr += `<td>${data[key]}</td>`;
+    }
   }
   tr += '</tr>';
   return tr;
